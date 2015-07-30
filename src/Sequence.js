@@ -1,6 +1,8 @@
 /*
  * Sequence class
  */
+ 
+var Note = Note || (require && require('./Note'));
 
 // create a new Sequence
 function Sequence( ac, tempo, arr ) {
