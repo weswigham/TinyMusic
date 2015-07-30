@@ -2,7 +2,7 @@
  * Sequence class
  */
 
-var Note = Note || ( require && require('./Note') );
+var Note = Note || ( ( typeof require === 'function' ) && require('./Note') );
 
 // create a new Sequence
 function Sequence( ac, tempo, arr ) {
