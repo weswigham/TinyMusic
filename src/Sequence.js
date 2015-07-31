@@ -86,26 +86,27 @@ Sequence.prototype.scheduleNote = function( index, when ) {
 };
 
 //setup when notes will run at current tempo
-Sequence.prototype.planTimingsForRemainingNotes = function ( startIndex, when ) {
+Sequence.prototype.planTimingsForRemainingNotes = 
+function( startIndex, when ) {
   var tempo = this.tempo;
-  this.notes.slice(startIndex).forEach(function(note, index){
-	note.scheduled = false;
-	note.scheduledTime = when;
-	when = when + 60 / tempo * note.duration;
-  });
+  this.notes.slice( startIndex ).forEach( function( note, index ) {
+    note.scheduled = false;
+    note.scheduledTime = when;
+    when = when + 60 / tempo * note.duration;
+  } );
   return when;
 };
 
 Sequence.prototype.setTempo = function( tempo ) {
-	if (tempo === this.tempo) return;
-	var preScheduled = this.notes.filter(function(n) { return n.scheduled; }).length;
-	var oldTempo = this.tempo;
-	this.tempo = tempo;
-	if (preScheduled > 0) {
-		this.planTimingsForRemainingNotes( preScheduled, this.notes[ preScheduled - 1 ].duration * (60 / oldTempo));
-	} else {
-		this.planTimingsForRemainingNotes( 0, this.startTime );
-	}
+  if ( tempo === this.tempo ) return;
+  var preScheduled = this.notes.filter( function( n ) { return n.scheduled; } ).length;
+  var oldTempo = this.tempo;
+  this.tempo = tempo;
+  if (preScheduled > 0) {
+    this.planTimingsForRemainingNotes( preScheduled, this.notes[ preScheduled - 1 ].duration * ( 60 / oldTempo ) );
+  } else {
+    this.planTimingsForRemainingNotes( 0, this.startTime );
+  }
 }
 
 // get the next note
@@ -145,29 +146,29 @@ Sequence.prototype.play = function( when ) {
   when = typeof when === 'number' ? when : this.ac.currentTime;
   this.startTime = when;
   this.createOscillator();
-  var schedule = (function() {
-      this.notes.forEach((function(note, index){
-          if (note.scheduled) {
-              return;
+  var schedule = ( function() {
+    this.notes.forEach( ( function( note, index ) {
+      if ( note.scheduled ) {
+        return;
+      }
+      if ( note.scheduledTime <= ( this.ac.currentTime + 0.1 ) ) { //schedule 100 ms out
+        var done = this.scheduleNote( index, note.scheduledTime );
+        note.scheduled = true;
+        if ( index === this.notes.length - 1 ) { //Last note scheduled. If on loop, reschedule all notes
+          if ( this.loop ) {
+            this.startTime = done;
+            this.planTimingsForRemainingNotes( 0, done );
+          } else {
+            this.osc.stop( done );
           }
-          if (note.scheduledTime <= (this.ac.currentTime + 0.1)) { //schedule 100 ms out
-              var done = this.scheduleNote(index, note.scheduledTime);
-              note.scheduled = true;
-              if (index === this.notes.length-1) { //Last note scheduled. If on loop, reschedule all notes
-                  if (this.loop) {
-                      this.startTime = done;
-                      this.planTimingsForRemainingNotes(0, done);
-                  } else {
-                      this.osc.stop(done);
-                  }
-              }
-          }
-      }).bind(this));
-  }).bind(this);
-  this.scheduler = setInterval(schedule, 60); //run the scheduler every 60ms
-  
-  this.planTimingsForRemainingNotes(0, when);
-  
+        }
+      }
+    }).bind( this ) );
+  }).bind( this );
+  this.scheduler = setInterval( schedule, 60 ); //run the scheduler every 60ms
+
+  this.planTimingsForRemainingNotes( 0, when );
+
   schedule();
   this.osc.start( when );
   return this;
@@ -175,7 +176,7 @@ Sequence.prototype.play = function( when ) {
 
 // stop playback, null out the oscillator, cancel parameter automation
 Sequence.prototype.stop = function() {
-  clearInterval(this.scheduler);
+  clearInterval( this.scheduler );
   if ( this.osc ) {
     this.osc.onended = null;
     this.osc.disconnect();
